@@ -102,3 +102,4 @@ curl -X POST http://localhost:8080/api/pronostics \
   -H "Content-Type: application/json" \
   -d '{"matchId":1,"scorePredA":2,"scorePredB":1}'
 ```
+# WorldCupGasparSUNDERMANN
