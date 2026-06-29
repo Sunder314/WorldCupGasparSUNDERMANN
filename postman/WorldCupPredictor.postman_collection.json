@@ -1,0 +1,406 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-4789-abcd-ef0123456789",
+    "name": "World Cup Predictor API",
+    "description": "Collection complete des 10 endpoints de l'API World Cup Predictor.\n\n## Utilisation\n\n1. Importer cette collection dans Postman.\n2. (Optionnel) Importer l'environnement `local` ou `aws`.\n3. Lancer **Auth > Inscription** ou **Auth > Login** : le JWT est automatiquement sauvegarde dans la variable `{{token}}` et reutilise par toutes les autres requetes.\n4. Pour les endpoints `ADMIN`, se connecter avec le compte admin (dev: pseudo `admin` / mot de passe `admin123`).\n\n## Variables\n\n- `baseUrl` : URL de l'API (defaut `http://localhost:8080`)\n- `token` : JWT (rempli automatiquement par les requetes d'auth)\n- `matchId` : ID de match utilise par les requetes Pronostics et Score (rempli automatiquement par GET /api/matchs)\n- `ligueCode` : code de ligue (rempli automatiquement par POST /api/ligues)\n- `ligueId` : id de ligue (rempli automatiquement par POST /api/ligues)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "matchId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "ligueCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ligueId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Inscription (POST /api/utilisateurs/inscription)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token sauvegarde:', json.token.substring(0, 30) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pseudo\": \"bob\",\n    \"email\": \"bob@test.com\",\n    \"motDePasse\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/utilisateurs/inscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "utilisateurs", "inscription"]
+            },
+            "description": "Cree un nouveau compte utilisateur (role USER) et renvoie un JWT."
+          }
+        },
+        {
+          "name": "Login (POST /api/auth/login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token sauvegarde:', json.token.substring(0, 30) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pseudo\": \"bob\",\n    \"motDePasse\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authentifie un utilisateur existant et renvoie un JWT. Le token est automatiquement stocke dans la variable de collection `token`."
+          }
+        },
+        {
+          "name": "Login Admin (POST /api/auth/login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token ADMIN sauvegarde');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pseudo\": \"admin\",\n    \"motDePasse\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Connexion avec le compte admin de demo (profil dev). Necessaire pour les endpoints reserves au role ADMIN (creation de match, validation de score)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matchs",
+      "item": [
+        {
+          "name": "Lister tous les matchs (GET /api/matchs)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const arr = pm.response.json();",
+                  "if (Array.isArray(arr) && arr.length > 0) {",
+                  "    pm.collectionVariables.set('matchId', arr[0].id);",
+                  "    console.log('matchId mis a jour:', arr[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matchs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchs"]
+            },
+            "description": "Renvoie tous les matchs tries par date. Sauvegarde le 1er id de match dans la variable `matchId`."
+          }
+        },
+        {
+          "name": "Matchs a venir (GET /api/matchs?statut=A_VENIR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matchs?statut=A_VENIR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchs"],
+              "query": [{ "key": "statut", "value": "A_VENIR" }]
+            }
+          }
+        },
+        {
+          "name": "Matchs termines (GET /api/matchs?statut=TERMINE)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matchs?statut=TERMINE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchs"],
+              "query": [{ "key": "statut", "value": "TERMINE" }]
+            }
+          }
+        },
+        {
+          "name": "Creer un match - ADMIN (POST /api/matchs)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"equipeA\": \"Italie\",\n    \"equipeB\": \"Belgique\",\n    \"dateCoupEnvoi\": \"2026-12-15T20:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/matchs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchs"]
+            },
+            "description": "Endpoint reserve aux ADMIN. Lancer d'abord 'Login Admin' pour avoir un token ADMIN."
+          }
+        },
+        {
+          "name": "Enregistrer le score - ADMIN (PUT /api/matchs/{id}/score)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 et match TERMINE', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().statut).to.eql('TERMINE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"scoreA\": 2,\n    \"scoreB\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/matchs/{{matchId}}/score",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchs", "{{matchId}}", "score"]
+            },
+            "description": "Endpoint reserve aux ADMIN. Declenche le moteur de points : tous les pronostics du match sont notes (0 / 100 / 150) et les points sont ajoutes au compteur des joueurs."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pronostics",
+      "item": [
+        {
+          "name": "Enregistrer un pronostic (POST /api/pronostics)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"matchId\": {{matchId}},\n    \"scorePredA\": 2,\n    \"scorePredB\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pronostics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pronostics"]
+            },
+            "description": "Enregistre ou modifie le pronostic de l'utilisateur connecte. Verrouille des que le match a demarre (statut != A_VENIR ou date de coup d'envoi depassee) -> renvoie 400."
+          }
+        },
+        {
+          "name": "Mes pronostics (GET /api/pronostics/mes-pronostics)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pronostics/mes-pronostics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pronostics", "mes-pronostics"]
+            },
+            "description": "Historique des pronostics du joueur connecte, avec le score reel et les points gagnes si le match est termine."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ligues",
+      "item": [
+        {
+          "name": "Creer une ligue (POST /api/ligues)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('ligueCode', json.code);",
+                  "pm.collectionVariables.set('ligueId', json.id);",
+                  "console.log('Ligue creee - code:', json.code, ', id:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nom\": \"Les Potes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ligues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ligues"]
+            },
+            "description": "Cree une ligue privee. Un code VIP a 8 caracteres est genere et stocke dans la variable `ligueCode`. Le createur est automatiquement membre."
+          }
+        },
+        {
+          "name": "Rejoindre une ligue (POST /api/ligues/rejoindre)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"{{ligueCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ligues/rejoindre",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ligues", "rejoindre"]
+            },
+            "description": "Rejoint une ligue via son code VIP (variable `ligueCode` automatiquement remplie par 'Creer une ligue')."
+          }
+        },
+        {
+          "name": "Mes ligues (GET /api/ligues/mes-ligues)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ligues/mes-ligues",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ligues", "mes-ligues"]
+            },
+            "description": "Liste les ligues dont l'utilisateur connecte est membre."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Classements",
+      "item": [
+        {
+          "name": "Classement general (GET /api/classements/general)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/classements/general",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "classements", "general"]
+            },
+            "description": "Classement mondial de tous les pronostiqueurs, du plus de points au moins."
+          }
+        },
+        {
+          "name": "Classement d'une ligue (GET /api/classements/ligue/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/classements/ligue/{{ligueId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "classements", "ligue", "{{ligueId}}"]
+            },
+            "description": "Classement filtre sur les membres d'une ligue (utilise la variable `ligueId`)."
+          }
+        }
+      ]
+    }
+  ]
+}
